@@ -1,0 +1,74 @@
+@baseUrl = http://localhost:8080
+@productId = 4
+
+### Список товарів. Нумерація сторінок починається з нуля.
+GET {{baseUrl}}/api/products?page=0&size=2
+Accept: application/json
+
+### Початковий товар
+GET {{baseUrl}}/api/products/1
+Accept: application/json
+
+### Створити товар. Укажи отриманий id у змінній productId на початку файлу.
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Stellar Treats",
+  "description": "Treats for space cats",
+  "price": 15.99,
+  "categoryId": 1,
+  "stockQuantity": 10
+}
+
+### Прочитати створений товар
+GET {{baseUrl}}/api/products/{{productId}}
+Accept: application/json
+
+### Повністю оновити товар. Пропущений description стає null.
+PUT {{baseUrl}}/api/products/{{productId}}
+Content-Type: application/json
+
+{
+  "name": "Updated Stellar Treats",
+  "price": 17.50,
+  "categoryId": 1,
+  "stockQuantity": 5
+}
+
+### Видалити товар: 204, без тіла відповіді
+DELETE {{baseUrl}}/api/products/{{productId}}
+
+### Видалений товар: 404
+GET {{baseUrl}}/api/products/{{productId}}
+
+### Помилки валідації: 400, із переліком полів
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": " ",
+  "price": 0,
+  "categoryId": 0,
+  "stockQuantity": -1
+}
+
+### Невідома категорія: 404
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Galaxy Toy",
+  "price": 7.50,
+  "categoryId": 999,
+  "stockQuantity": 2
+}
+
+### Некоректна пагінація: 400
+GET {{baseUrl}}/api/products?page=-1&size=0
+
+### Непідтримуваний тип вмісту: 415
+POST {{baseUrl}}/api/products
+Content-Type: text/plain
+
+not JSON
