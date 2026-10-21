@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -69,11 +70,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         if (exception.isForReturnValue()) {
             return handleExceptionInternal(exception, null, headers, status, request);
         }
-        var problem = ProblemDetail.forStatusAndDetail(status, "Request parameter validation failed");
+        var problem = ProblemDetail.forStatusAndDetail(status, "Request validation failed");
         var errors = exception.getParameterValidationResults().stream()
                 .flatMap(result -> result.getResolvableErrors().stream()
                         .map(error -> new ValidationError(
-                                parameterName(result.getMethodParameter()),
+                                error instanceof FieldError fieldError
+                                        ? fieldError.getField()
+                                        : parameterName(result.getMethodParameter()),
                                 validationMessage(error.getDefaultMessage()))))
                 .toList();
         problem.setProperty("errors", errors);

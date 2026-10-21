@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ua.kpi.pastushenko.cosmocats.api.dto.ProductPageResponse;
 import ua.kpi.pastushenko.cosmocats.api.dto.ProductResponse;
 import ua.kpi.pastushenko.cosmocats.api.dto.ProductWriteRequest;
@@ -54,7 +55,12 @@ public class ProductController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody ProductWriteRequest request) {
         var created = productService.create(productMapper.toDomain(request));
-        return ResponseEntity.created(URI.create("/api/products/" + created.getId()))
+        String location = ServletUriComponentsBuilder.fromCurrentRequestUri()
+                .path("/{productId}")
+                .buildAndExpand(created.getId())
+                .toUri()
+                .getRawPath();
+        return ResponseEntity.created(URI.create(location))
                 .body(productMapper.toDto(created));
     }
 
