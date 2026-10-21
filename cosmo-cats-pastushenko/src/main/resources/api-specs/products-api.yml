@@ -1,0 +1,419 @@
+openapi: 3.0.3
+info:
+  title: Cosmo Cats Products API
+  description: |
+    Контракт API товарів для Cosmo Cats Intergalactic Marketplace.
+    Лабораторна робота № 1. Пастушенко Ростислав, ІС-44.
+    У першій лабораторній дані зберігаються в пам'яті застосунку.
+    Усі ціни наведено в одній валюті — USD.
+    Операція PUT повністю замінює редаговані поля товару.
+  version: 1.0.0
+externalDocs:
+  description: Завдання лабораторної роботи № 1
+  url: https://grzik-production.notion.site/1-API-89cbf3d0970a836d8b6e8193f5f4e003
+servers:
+  - url: http://localhost:8080
+    description: Локальний запуск
+tags:
+  - name: Products
+    description: Створення, перегляд, оновлення та видалення товарів
+paths:
+  /api/products:
+    get:
+      tags: [Products]
+      operationId: listProducts
+      summary: Отримати сторінку товарів
+      description: |
+        Нумерація сторінок починається з нуля. Товари впорядковано за id
+        за зростанням. Для сторінки за межами списку content є порожнім,
+        а totalElements і totalPages відображають загальний стан списку.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Сторінка товарів
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+              example:
+                content:
+                  - id: 1
+                    name: Cosmic Milk
+                    description: Молоко для космічних котів
+                    price: 12.50
+                    categoryId: 1
+                    stockQuantity: 20
+                page: 0
+                size: 20
+                totalElements: 1
+                totalPages: 1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Products]
+      operationId: createProduct
+      summary: Створити товар
+      description: |
+        Ідентифікатор створює сервер. categoryId має посилатися на наявну
+        категорію. Невалідні дані повертають 400, відсутня категорія — 404.
+      requestBody:
+        $ref: '#/components/requestBodies/ProductBody'
+      responses:
+        '201':
+          description: Товар створено
+          headers:
+            Location:
+              description: Відносний URI створеного товару, наприклад /api/products/1
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/products/{productId}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [Products]
+      operationId: getProduct
+      summary: Отримати товар за ID
+      responses:
+        '200':
+          description: Товар знайдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Products]
+      operationId: updateProduct
+      summary: Оновити товар за ID
+      description: |
+        Повністю замінює редаговані поля наявного товару. id залишається
+        незмінним. Пропущений description очищує опис. Якщо товар або
+        зазначена категорія не існують, повертається 404. PUT не створює
+        новий товар за довільним ідентифікатором.
+      requestBody:
+        $ref: '#/components/requestBodies/ProductBody'
+      responses:
+        '200':
+          description: Оновлений товар
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Products]
+      operationId: deleteProduct
+      summary: Видалити товар за ID
+      description: Повторне видалення вже відсутнього товару повертає 404.
+      responses:
+        '204':
+          description: Товар видалено; тіло відповіді відсутнє
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  parameters:
+    ProductId:
+      name: productId
+      in: path
+      required: true
+      description: Додатний цілочисельний ідентифікатор товару
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        maximum: 9223372036854775807
+      example: 1
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Номер сторінки, починаючи з нуля
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 2147483647
+        default: 0
+      example: 0
+    Size:
+      name: size
+      in: query
+      required: false
+      description: Максимальна кількість товарів на сторінці
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+  requestBodies:
+    ProductBody:
+      required: true
+      description: |
+        Редаговані поля товару. Поле id та інші невідомі поля не приймаються.
+        Порожнє тіло запиту, помилки JSON і порушення валідації повертають 400.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProductWriteRequest'
+          example:
+            name: Cosmic Milk
+            description: Молоко для космічних котів
+            price: 12.50
+            categoryId: 1
+            stockQuantity: 20
+  schemas:
+    Price:
+      type: number
+      description: |
+        Ціна в USD, більша за нуль, не більше двох знаків після крапки.
+        Для Java передбачено BigDecimal, а не double або float.
+      minimum: 0.01
+      maximum: 9999999999.99
+      multipleOf: 0.01
+      example: 12.50
+    ProductWriteRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - price
+        - categoryId
+        - stockQuantity
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 120
+          pattern: '\S'
+          description: Назва завдовжки 3–120 символів, яка не складається лише з пробілів
+          example: Cosmic Milk
+        description:
+          type: string
+          nullable: true
+          maxLength: 2000
+          description: Необов'язковий опис; може бути null
+          example: Молоко для космічних котів
+        price:
+          $ref: '#/components/schemas/Price'
+        categoryId:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9223372036854775807
+          description: Ідентифікатор наявної категорії
+          example: 1
+        stockQuantity:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 2147483647
+          description: Кількість одиниць товару в наявності
+          example: 20
+    Product:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - description
+        - price
+        - categoryId
+        - stockQuantity
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9223372036854775807
+          readOnly: true
+          example: 1
+        name:
+          type: string
+          minLength: 3
+          maxLength: 120
+          pattern: '\S'
+          example: Cosmic Milk
+        description:
+          type: string
+          nullable: true
+          maxLength: 2000
+          example: Молоко для космічних котів
+        price:
+          $ref: '#/components/schemas/Price'
+        categoryId:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9223372036854775807
+          example: 1
+        stockQuantity:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 2147483647
+          example: 20
+    ProductPage:
+      type: object
+      additionalProperties: false
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Product'
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 2147483647
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: Назва невалідного поля або параметра
+          example: price
+        message:
+          type: string
+          description: Зрозумілий опис порушення
+          example: must be greater than or equal to 0.01
+    ProblemDetail:
+      type: object
+      description: |
+        Помилка у форматі RFC 9457. errors — необов'язкове розширення
+        з деталями порушень валідації. Внутрішні стеки викликів та інші
+        технічні подробиці не передаються клієнту. Дозволено інші
+        розширення RFC 9457, тому additionalProperties не обмежено.
+      required: [type, title, status, detail, instance]
+      properties:
+        type:
+          type: string
+          format: uri
+          example: about:blank
+        title:
+          type: string
+          example: Bad Request
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+          example: 400
+        detail:
+          type: string
+          example: Request validation failed
+        instance:
+          type: string
+          format: uri-reference
+          example: /api/products
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+  responses:
+    BadRequest:
+      description: Невалідні поля, некоректний JSON, типи даних або параметри запиту
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+          example:
+            type: about:blank
+            title: Bad Request
+            status: 400
+            detail: Request validation failed
+            instance: /api/products
+            errors:
+              - field: price
+                message: must be greater than or equal to 0.01
+    NotFound:
+      description: Товар або вказану в запиті категорію не знайдено
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: Product with id 999 was not found
+            instance: /api/products/999
+    UnsupportedMediaType:
+      description: Тип вмісту запиту не підтримується; очікується application/json
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+          example:
+            type: about:blank
+            title: Unsupported Media Type
+            status: 415
+            detail: Content-Type must be application/json
+            instance: /api/products
+    InternalServerError:
+      description: Непередбачена внутрішня помилка без розкриття технічних подробиць
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+          example:
+            type: about:blank
+            title: Internal Server Error
+            status: 500
+            detail: An unexpected error occurred
+            instance: /api/products
