@@ -7,13 +7,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import ua.kpi.pastushenko.cosmocats.api.validation.CentAmount;
 
 import java.math.BigDecimal;
 
 public record ProductWriteRequest(
         @NotBlank @Size(min = 3, max = 120) String name,
         @Size(max = 2000) String description,
-        @NotNull @DecimalMin("0.01") @DecimalMax("9999999999.99") BigDecimal price,
+        @NotNull @DecimalMin("0.01") @DecimalMax("9999999999.99") @CentAmount BigDecimal price,
         @NotNull @Positive Long categoryId,
         @NotNull @PositiveOrZero Integer stockQuantity
 ) {

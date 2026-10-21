@@ -72,3 +72,36 @@ POST {{baseUrl}}/api/products
 Content-Type: text/plain
 
 not JSON
+
+### PUT: назви полів у errors мають бути name, price, categoryId, stockQuantity
+PUT {{baseUrl}}/api/products/1
+Content-Type: application/json
+
+{
+  "name": " ",
+  "price": 0,
+  "categoryId": 0,
+  "stockQuantity": -1
+}
+
+### Некратна 0.01 ціна: 400 та errors[].field = price
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Galaxy Toy",
+  "price": 12.345,
+  "categoryId": 1,
+  "stockQuantity": 2
+}
+
+### Кінцеві нулі дозволено: 201, ціна у відповіді 12.50
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Galaxy Toy",
+  "price": 12.500,
+  "categoryId": 1,
+  "stockQuantity": 2
+}
