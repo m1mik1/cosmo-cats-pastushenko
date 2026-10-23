@@ -10,6 +10,7 @@
 - Spring Boot 3.5.16
 - Gradle 8.10.2, Groovy DSL
 - Spring Web і Jakarta Bean Validation
+- JUnit 5, Mockito, MockMvc, JaCoCo, GitHub Actions
 
 ## Поточний стан
 
@@ -22,7 +23,13 @@
 - валідацію запитів і глобальну обробку помилок у форматі RFC 9457;
 - OpenAPI-контракт у `src/main/resources/api-specs/products-api.yml`.
 
-Зміни збираються у гілці `lab1-draft` для self-review через Pull Request.
+Історія лабораторної № 1 збережена у гілках `lab1-draft` і `lab1-fixes`.
+Лабораторна № 2 виконується в окремій гілці `lab2-testing` від `lab1-fixes`.
+
+У лабораторній № 2 додано тести всіх методів `ProductService`, позитивні
+та негативні тести контролера, перевірки доменних правил, репозиторію,
+мапера й інтеграційні HTTP-сценарії. GitHub Actions запускає повну збірку
+та перевіряє покриття JaCoCo. Опис сценаріїв і звітів — у [TESTING.md](../../Lab2_Testing_CI_Resent/project/TESTING.md).
 
 ## Запуск
 
@@ -110,4 +117,6 @@ type, title, status, detail та instance. Для порушень валіда�
 
 Приклади позитивних і негативних HTTP-запитів містяться в `api-requests.http`.
 Після створення товару потрібно вказати його отриманий id у змінній productId.
-Автоматизовані тести, CI та перевірка покриття додаються у лабораторній роботі № 2.
+Команда `./gradlew clean build` запускає всі тести та перевірку покриття.
+Для Windows: `.\gradlew.bat clean build`.
+HTML-звіт JaCoCo: `build/reports/coverage/index.html`.

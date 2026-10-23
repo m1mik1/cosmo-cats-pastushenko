@@ -1,0 +1,50 @@
+jacoco {
+    toolVersion = '0.8.15'
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test'), tasks.named('integrationTest')
+    executionData tasks.named('test').get(), tasks.named('integrationTest').get()
+    reports {
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir('reports/coverage')
+        xml.required = true
+        xml.outputLocation = layout.buildDirectory.file('reports/coverage/coverage.xml')
+        csv.required = true
+        csv.outputLocation = layout.buildDirectory.file('reports/coverage/coverage.csv')
+    }
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    dependsOn tasks.named('jacocoTestReport')
+    executionData tasks.named('test').get(), tasks.named('integrationTest').get()
+    violationRules {
+        rule {
+            element = 'CLASS'
+            includes = ['ua.kpi.pastushenko.cosmocats.application.service.*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+        }
+        rule {
+            element = 'BUNDLE'
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+// Gradle does not attach coverage verification to check automatically.
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}

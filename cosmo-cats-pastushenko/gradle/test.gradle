@@ -1,0 +1,47 @@
+import org.gradle.process.CommandLineArgumentProvider
+
+abstract class MockitoAgentArgumentProvider implements CommandLineArgumentProvider {
+    @Classpath
+    abstract ConfigurableFileCollection getAgentClasspath()
+
+    @Override
+    Iterable<String> asArguments() {
+        ["-javaagent:${agentClasspath.singleFile.absolutePath}"]
+    }
+}
+
+def mockitoArguments = objects.newInstance(MockitoAgentArgumentProvider)
+mockitoArguments.agentClasspath.from(configurations.mockitoAgent)
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    maxHeapSize = '512m'
+    // Load Mockito at JVM startup: Java 21 can restrict dynamic self-attachment.
+    jvmArgumentProviders.add(mockitoArguments)
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat = 'full'
+    }
+    afterSuite { descriptor, result ->
+        if (descriptor.parent == null) {
+            logger.lifecycle("${name}: ${result.testCount} tests, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped")
+        }
+    }
+}
+
+tasks.named('test') {
+    exclude '**/*IT.class'
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs the complete API against an embedded HTTP server.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include '**/*IT.class'
+    mustRunAfter tasks.named('test')
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('integrationTest')
+}
