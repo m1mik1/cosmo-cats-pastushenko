@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: cosmo_cats
+      POSTGRES_USER: cosmo
+      POSTGRES_PASSWORD: cosmo_local
+    ports:
+      - "127.0.0.1:${DB_PORT:-15432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  migrate:
+    image: liquibase/liquibase:4.33.0
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://postgres:5432/cosmo_cats
+      LIQUIBASE_COMMAND_USERNAME: cosmo
+      LIQUIBASE_COMMAND_PASSWORD: cosmo_local
+      LIQUIBASE_COMMAND_CHANGELOG_FILE: db/changelog/db.changelog-master.xml
+      LIQUIBASE_SEARCH_PATH: /liquibase/changelog
+    volumes:
+      - ./src/main/resources:/liquibase/changelog:ro
+    command: ["update"]
+
+volumes:
+  postgres_data:

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.31.xsd"
+        logicalFilePath="db/changelog/db.changelog-master.xml">
+
+    <changeSet id="001-create-schema" author="pastushenko" dbms="postgresql">
+        <sqlFile path="changes/001-create-schema.sql"
+                 relativeToChangelogFile="true" encoding="UTF-8"/>
+    </changeSet>
+
+    <changeSet id="002-add-constraints-and-indexes" author="pastushenko" dbms="postgresql">
+        <sqlFile path="changes/002-add-constraints-and-indexes.sql"
+                 relativeToChangelogFile="true" encoding="UTF-8"/>
+    </changeSet>
+
+    <changeSet id="003-seed-catalog" author="pastushenko" dbms="postgresql">
+        <sqlFile path="changes/003-seed-catalog.sql"
+                 relativeToChangelogFile="true" encoding="UTF-8"/>
+    </changeSet>
+</databaseChangeLog>
