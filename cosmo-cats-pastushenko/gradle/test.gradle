@@ -34,7 +34,7 @@ tasks.named('test') {
 }
 
 tasks.register('integrationTest', Test) {
-    description = 'Runs the API against PostgreSQL in Testcontainers.'
+    description = 'Runs API and JPA CRUD/transaction tests against PostgreSQL in Testcontainers.'
     group = 'verification'
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
