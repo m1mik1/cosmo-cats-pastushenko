@@ -2,7 +2,7 @@
 
 Пастушенко Ростислав, ІС-44, КПІ. Commerce Development with Java or Kotlin.
 
-Поточний стан: лабораторна 3, блок 2. Товари, категорії й замовлення зберігаються
+Поточний стан: лабораторна 3, блоки 1–3. Товари, категорії й замовлення зберігаються
 у PostgreSQL. Дані залишаються після перезапуску застосунку та контейнера.
 
 Стек: Java 21, Spring Boot 3.5.16, Gradle 8.10.2, PostgreSQL 17, Liquibase 4.33.0,
@@ -39,9 +39,11 @@ Galaxy Yarn, Comet Collar. Named volume PostgreSQL зберігає дані;
 - [JPA.md](JPA.md): архітектура, API, транзакції та запуск.
 - [DATABASE.md](DATABASE.md): схема, sequences, індекси й обмеження.
 - [TESTING.md](TESTING.md): тести та межі перевірок.
+- [LAB3_CHECKLIST.md](LAB3_CHECKLIST.md): вимоги та підготовка до здачі.
 - [lab3-requests.http](lab3-requests.http): сценарій перевірки в IntelliJ.
 - [OpenAPI товарів](src/main/resources/api-specs/products-api.yml).
 
 Попередні лабораторні збережені у lab1-draft, lab1-fixes та lab2-testing.
-Блок 2 продовжується в lab3-database. Лабораторна 3 ще потребує завершення
-тестового блока й фінальної перевірки перед здачею.
+Лабораторна 3 продовжується в lab3-database. Додано CRUD-тести з частковим
+Spring-контекстом і перевірки rollback. Перед здачею потрібні зелений CI
+останнього комміту та пояснювальні коментарі в PR.

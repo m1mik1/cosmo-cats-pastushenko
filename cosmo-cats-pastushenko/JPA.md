@@ -1,4 +1,4 @@
-# Лабораторна 3 — JPA і транзакції, блок 2
+# Лабораторна 3 — JPA і транзакції, блоки 2–3
 
 Пастушенко Ростислав, ІС-44.
 
@@ -87,12 +87,12 @@ content, page, size, totalElements, totalPages. POST повертає відно
 ```
 
 `test` запускає unit/MockMvc без Docker. Повна збірка додатково запускає
-ProductApiIT на PostgreSQL через Testcontainers. Це окрема тимчасова БД,
-вона не використовує дані Compose. Docker обов'язковий для повної збірки.
+ProductApiIT та DatabaseCrudIT на PostgreSQL через Testcontainers. Це окремі тимчасові БД,
+вони не використовують дані Compose. Docker обов'язковий для повної збірки.
 Поріг JaCoCo збережено: ≥80% рядків загалом, ≥80% рядків і гілок кожного сервісу.
 
-У третьому блоці залишаються CRUD-тести з частковим Spring-контекстом,
-перевірки rollback і обмежень на PostgreSQL через Testcontainers та оформлення PR.
+DatabaseCrudIT використовує @DataJpaTest, перевіряє CRUD, обмеження та rollback
+для реальних сервісних транзакцій. Сценарії та запуск описані в [TESTING.md](TESTING.md).
 
 Джерела: [Spring Data JPA transactions](https://docs.spring.io/spring-data/jpa/reference/jpa/transactions.html),
 [Spring Boot Testcontainers](https://docs.spring.io/spring-boot/3.5/reference/testing/testcontainers.html),
