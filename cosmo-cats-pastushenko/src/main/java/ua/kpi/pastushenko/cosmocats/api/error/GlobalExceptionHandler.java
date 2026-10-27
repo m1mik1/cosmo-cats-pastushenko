@@ -3,6 +3,8 @@ package ua.kpi.pastushenko.cosmocats.api.error;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.springframework.core.MethodParameter;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -30,6 +32,13 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @ExceptionHandler({DataIntegrityViolationException.class, PessimisticLockingFailureException.class})
+    public ResponseEntity<Object> handleDatabaseConflict(Exception exception, WebRequest request) {
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "The operation conflicts with existing data or a concurrent update");
+        return handleExceptionInternal(exception, problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Object> handleNotFound(ResourceNotFoundException exception, WebRequest request) {
@@ -88,7 +97,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpMessageNotReadableException exception, HttpHeaders headers,
             HttpStatusCode status, WebRequest request) {
         var problem = ProblemDetail.forStatusAndDetail(
-                status, "Request body must be valid JSON matching the product schema"
+                status, "Request body must be valid JSON matching the request schema"
         );
         if (exception.getCause() instanceof UnrecognizedPropertyException unknownField) {
             problem.setProperty("errors", List.of(new ValidationError(unknownField.getPropertyName(), "Unknown field")));

@@ -1,0 +1,49 @@
+@baseUrl = http://localhost:8080
+
+### Створити категорію
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{"name":"Orbital Gadgets"}
+
+> {% client.global.set("categoryId", response.body.id); %}
+
+### Створити товар
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{"name":"Orbital Laser","description":null,"price":15.50,"categoryId":{{categoryId}},"stockQuantity":10}
+
+> {% client.global.set("productId", response.body.id); %}
+
+### Створити замовлення
+POST {{baseUrl}}/api/orders
+Content-Type: application/json
+
+{"items":[{"productId":{{productId}},"quantity":2}]}
+
+> {% client.global.set("orderId", response.body.id); %}
+
+### Очікувана сума 31.00
+GET {{baseUrl}}/api/orders/{{orderId}}
+
+### Змінити каталог
+PUT {{baseUrl}}/api/products/{{productId}}
+Content-Type: application/json
+
+{"name":"Updated Orbital Laser","description":null,"price":99.00,"categoryId":{{categoryId}},"stockQuantity":10}
+
+### Назва і ціна замовлення залишаються старими
+GET {{baseUrl}}/api/orders/{{orderId}}
+
+### Очікується 409: товар має історію замовлення
+DELETE {{baseUrl}}/api/products/{{productId}}
+
+### Прибрати створені дані у порядку залежностей
+DELETE {{baseUrl}}/api/orders/{{orderId}}
+
+### Тепер очікується 204
+DELETE {{baseUrl}}/api/products/{{productId}}
+
+### Видалити тестову категорію
+DELETE {{baseUrl}}/api/categories/{{categoryId}}

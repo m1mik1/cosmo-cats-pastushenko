@@ -1,6 +1,5 @@
 package ua.kpi.pastushenko.cosmocats.infrastructure.repository;
 
-import org.springframework.stereotype.Repository;
 import ua.kpi.pastushenko.cosmocats.domain.model.PageRequest;
 import ua.kpi.pastushenko.cosmocats.domain.model.Product;
 import ua.kpi.pastushenko.cosmocats.domain.model.ProductPage;
@@ -12,7 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 
-@Repository
 public class InMemoryProductRepository implements ProductRepository {
 
     private final NavigableMap<Long, Product> products = new TreeMap<>();

@@ -1,114 +1,82 @@
-# Лабораторна робота № 2 — тести та CI
+# Тестування лабораторної 3
 
-Пастушенко Ростислав, ІС-44, КПІ. (Зроблено через ШІ, для кращого розуміння та читання)
+Пастушенко Ростислав, ІС-44. Блоки 1–3.
 
 ## Запуск
 
-Потрібен **JDK 21**. Команди виконуються в каталозі з `build.gradle`.
+Потрібні Java 21 та Docker Engine для інтеграційних тестів.
+З папки з build.gradle:
 
 ```bash
+./gradlew test
+./gradlew integrationTest
 ./gradlew clean build
 ```
 
-Windows PowerShell:
+`test` запускає 183 unit/MockMvc-тести без Docker. `integrationTest` запускає
+2 HTTP-сценарії ProductApiIT і 18 сценаріїв DatabaseCrudIT. Повна збірка
+додатково формує звіт JaCoCo та перевіряє пороги покриття.
 
-```powershell
-.\gradlew.bat clean build
-```
-
-В IntelliJ IDEA слід обрати JDK 21 для Project SDK і Gradle JVM,
-а в налаштуваннях Gradle — **Run tests using: Gradle**. Після змін
-`build.gradle` потрібно виконати Reload All Gradle Projects.
-
-Окремі етапи:
-
-| Команда | Призначення |
-| --- | --- |
-| `./gradlew test` | Unit-тести та MVC-тести; класи `*IT` виключено |
-| `./gradlew integrationTest` | Сценарії `*IT` з реальним HTTP-сервером |
-| `./gradlew jacocoTestReport` | Обидва набори тестів та об'єднаний звіт |
-| `./gradlew check` | Обидва набори тестів і перевірка порогів покриття |
-| `./gradlew clean build` | Чиста повна збірка, усі перевірки та JAR |
+Testcontainers створює окремі тимчасові PostgreSQL 17. Контейнери керуються
+Spring через @ServiceConnection і закриваються разом із тестовим контекстом.
+Навчальні дані Compose не використовуються. За відсутності Docker повна
+збірка завершується помилкою: інтеграційні тести не пропускаються автоматично.
 
 ## Що перевіряється
 
-| Тестовий клас | Основні сценарії |
+| Група | Перевірки |
 | --- | --- |
-| `ProductServiceTest` | Усі п'ять публічних методів сервісу: пагінація, CRUD, відсутній товар або категорія, некоректний id, заборона upsert, відсутність запису після відхилення даних |
-| `ProductControllerTest` | GET/POST/PUT/DELETE, 200/201/204, Location, пагінація, валідація полів для POST і PUT, строгий JSON, переповнення чисел, 400/404/405/406/415/500, формат ProblemDetail |
-| `DomainRulesTest` | Точні грошові суми, межі полів, незмінність колекцій, сума замовлення, великі значення offset |
-| `InMemoryProductRepositoryTest` | Стабільне сортування, унікальні id, відсутність повторного використання id, повне оновлення, видалення, відсутність upsert |
-| `ProductMapperTest` | Перенесення полів, точність ціни, заборона відповіді без id та відсутніх обов'язкових чисел |
-| `ProductApiIT` | Повний CRUD через справжній HTTP-сервер з `/cosmo`; відхилені записи не змінюють стан сховища |
+| Unit/MockMvc | Сервіси, доменні правила, мапери, JPA-адаптери з Mockito, позитивні та негативні HTTP-запити |
+| ProductApiIT | Повний HTTP CRUD товару, пагінація, Location з context path, відхилення записів |
+| DatabaseCrudIT | Частковий Spring-контекст, CRUD Product/Category/Order, обмеження БД, історія ціни, реальні транзакції |
 
-Сервіс перевіряється із замоканими інтерфейсами репозиторіїв, без Spring.
-MVC-тести використовують справжні Jackson, Bean Validation, mapper та обробник
-помилок, а сервіс замінено через `@MockitoBean`.
-Інтеграційні тести запускають Spring Boot на випадковому порту та використовують
-Java HttpClient, справжній сервіс і репозиторії. Створені товари видаляються
-у `finally`, тому сценарії не залежать від порядку запуску.
+DatabaseCrudIT використовує @DataJpaTest та явний імпорт лише потрібних
+сервісів, адаптерів і контейнерної конфігурації. HTTP-сервер і контролери не
+піднімаються. @AutoConfigureTestDatabase(replace=NONE) зберігає підключення до
+PostgreSQL; H2 не використовується.
 
-Регресійні сценарії для виправлень ЛР № 1: `12.500` приймається без втрати
-точності, `12.345` відхиляється; помилки PUT містять назви полів DTO;
-Location зберігає context path і не містить query string.
+Тестова @Transactional має propagation=NOT_SUPPORTED. Тому кожен виклик
+сервісу повинен сам відкрити транзакцію й завершити її commit або rollback.
+Наступне читання перевіряє дані з БД після завершення попередньої транзакції,
+а не об'єкт у тому самому persistence context.
 
-## Покриття
+18 сценаріїв DatabaseCrudIT:
 
-Підключені `gradle/test.gradle` та `gradle/jacoco.gradle`.
-JaCoCo об'єднує результати `test` і `integrationTest`. Класи застосунку
-не виключаються зі звіту.
+- виконані міграції, ID sequences та відсутність контролерів у контексті;
+- CRUD окремо для Category, Product та Order;
+- унікальність категорії й назви товару в межах категорії;
+- повний rollback конфліктного оновлення товару;
+- заборона видалення категорії/товару, які мають залежності;
+- історичні ціна/назва й незмінний createdAt замовлення;
+- rollback заголовка та всіх позицій при помилці другої позиції;
+- відновлення початкових позицій при помилці заміни замовлення;
+- відсутні посилання й PUT без неявного INSERT;
+- стабільна пагінація та великі offsets;
+- ID не використовується повторно після видалення;
+- три параметризовані перевірки CHECK-обмежень напряму в БД;
+- повторне виконання Liquibase без дублювання даних.
 
-Пороги, які перевіряє збірка:
+Для перевірки rollback тест тимчасово додає CHECK, який відхиляє quantity=13.
+Це створює помилку вже під час запису в БД, після початку збереження замовлення.
+Обмеження існує тільки в тестовому контейнері та видаляється у finally.
+Воно не входить у Liquibase-міграції і не є бізнес-правилом застосунку.
+Перед кожним сценарієм дані контейнера очищуються; історія Liquibase залишається.
 
-- кожен клас пакета `application.service`: щонайменше **80% рядків і 80% гілок**;
-- весь застосунок: щонайменше **80% рядків**.
+## Покриття та CI
 
-`check` явно залежить від `jacocoTestCoverageVerification`, тому низьке покриття
-завершує `build` з помилкою. Вимога курсу до сервісів — мінімум 60%,
-рекомендовано 80%; у цьому проєкті встановлено поріг 80%.
+Поріг збережено: ≥80% рядків загалом, ≥80% рядків і гілок кожного сервісу.
+Gradle check залежить від тестів і перевірки JaCoCo. GitHub Actions виконує
+clean build. Немає виключення production-класів з покриття або зниження порогів.
 
-Звіти після збірки:
+- HTML: build/reports/coverage/index.html
+- XML: build/reports/coverage/coverage.xml
+- Unit: build/reports/tests/test/index.html
+- Integration: build/reports/tests/integrationTest/index.html
+- CI-артефакт: test-and-coverage-reports
 
-- `build/reports/tests/test/index.html`;
-- `build/reports/tests/integrationTest/index.html`;
-- `build/reports/coverage/index.html`;
-- `build/reports/coverage/coverage.xml` та `coverage.csv`.
+Орієнтир повної збірки: 183 unit/MockMvc + 20 integration = 203 тести.
+Фактичний результат і покриття для здачі беруться з CI останнього комміту.
+Завантажуй і розпаковуй артефакт повністю: HTML використовує сусідні файли.
 
-Локальна перевірка підготовленої версії, 23.10.2026, Java 21 / Gradle 8.10.2:
-
-| Перевірка | Результат |
-| --- | --- |
-| `test` | 144 тести, 0 помилок, 0 пропущених |
-| `integrationTest` | 2 тести, 0 помилок, 0 пропущених |
-| `ProductService`, рядки | 30/30 — 100% |
-| `ProductService`, гілки | 12/12 — 100% |
-| Увесь застосунок, рядки | 294/304 — 96,71% |
-| Увесь застосунок, гілки | 101/116 — 87,07% |
-| `build`, включно з перевіркою покриття | BUILD SUCCESSFUL |
-| Workflow, actionlint 1.7.12 | Без помилок |
-
-Це локальні результати. Статус GitHub Actions потрібно перевірити після push.
-
-## CI
-
-Workflow `.github/workflows/pull_request.yml` має бути в **корені Git-репозиторію**.
-Gradle-проєкт вкладений у каталог `cosmo-cats-pastushenko`, тому workflow задає
-цей `working-directory`. На push і pull request він встановлює Java 21,
-виконує `./gradlew --no-daemon clean build` і зберігає повні звіти як artifact
-`test-and-coverage-reports`, зокрема після невдалого тесту.
-
-Приклад викладача адаптовано до Java 21, вкладеної структури репозиторію,
-актуальних версій actions та явного запуску перевірок.
-Mockito підключається Java-агентом під час старту тестової JVM: це усуває
-залежність від dynamic self-attachment, який може бути обмежений на Java 21.
-
-WireMock — додаткове завдання курсу. У поточному застосунку немає вихідних
-HTTP-клієнтів, тому він не використовується. Наявні інтеграційні тести
-перевіряють власний сервер і не потребують доступу до зовнішніх сервісів.
-
-Джерела:
-
-- [Умови курсу](https://grzik-production.notion.site/Commerce-Development-with-Java-or-Kotlin-ourse-V3-3d0bf3d0970a801fa559d5de13d8aad8)
-- [Приклад викладача](https://github.com/Ekatereana/Java-WEB-KPI-Course/pull/1)
-- [Mockito: instrumentation для Java 21+](https://javadoc.io/static/org.mockito/mockito-core/5.20.0/org.mockito/org/mockito/Mockito.html#0.3)
-- [Gradle: JaCoCo plugin](https://docs.gradle.org/8.10.2/userguide/jacoco_plugin.html)
+Джерела: [Spring Boot test slices](https://docs.spring.io/spring-boot/3.5/reference/testing/spring-boot-applications.html),
+[Spring test transactions](https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/tx.html).

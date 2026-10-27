@@ -1,6 +1,20 @@
 spring:
   application:
     name: cosmo-cats-pastushenko
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:15432/cosmo_cats}
+    username: ${DB_USERNAME:cosmo}
+    password: ${DB_PASSWORD:cosmo_local}
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        default_batch_fetch_size: 32
 
 server:
   port: 8080
