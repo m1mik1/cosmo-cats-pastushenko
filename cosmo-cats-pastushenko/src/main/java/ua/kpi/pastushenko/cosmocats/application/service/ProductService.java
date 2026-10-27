@@ -1,6 +1,7 @@
 package ua.kpi.pastushenko.cosmocats.application.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ua.kpi.pastushenko.cosmocats.application.exception.ResourceNotFoundException;
 import ua.kpi.pastushenko.cosmocats.domain.model.PageRequest;
 import ua.kpi.pastushenko.cosmocats.domain.model.Product;
@@ -11,6 +12,7 @@ import ua.kpi.pastushenko.cosmocats.domain.repository.ProductRepository;
 import java.util.Objects;
 
 @Service
+@Transactional(readOnly = true)
 public class ProductService {
 
     private final ProductRepository productRepository;
@@ -31,6 +33,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
     }
 
+    @Transactional
     public Product create(Product product) {
         Objects.requireNonNull(product, "product must not be null");
         if (product.getId() != null) {
@@ -40,6 +43,7 @@ public class ProductService {
         return productRepository.create(product);
     }
 
+    @Transactional
     public Product update(long id, Product product) {
         requirePositiveId(id);
         Objects.requireNonNull(product, "product must not be null");
@@ -51,6 +55,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
     }
 
+    @Transactional
     public void delete(long id) {
         requirePositiveId(id);
         if (!productRepository.deleteById(id)) {
